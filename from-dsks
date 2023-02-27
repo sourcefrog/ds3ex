@@ -1,0 +1,29 @@
+#! /usr/bin/fish
+
+# One-time script to convert all wavs; paths are specific to what I had on the day.
+
+# This needs the a2tools from https://github.com/catseye/a2tools to read 
+# Apple DOS images.
+
+mkdir -p orig
+for dsk in ../greengate\ DS-3/disks/dsk/*DSK ../greengate\ DS-3/disks/dsk/*dsk
+	set short (basename -s .DSK $dsk | sed -e 's/\.dsk$//' )
+	echo process disk image $dsk 
+	echo short name $short
+	for file in (a2ls $dsk | tail -n +4|cut -c 9- | grep 'SOUND' | sed -e 's/ *$//')
+		# Trim off Apple DOS dir listing fluff; take only SOUND files.
+		echo file $file
+		# Removed slashes and control characters in originals
+		set safename (echo $file | sed -e 's/SOUND\.//' | tr / _ | tr -d '[:cntrl:]' )
+		a2out $dsk $file orig/$safename.tmp
+		if test -f orig/$safename
+			if cmp orig/$safename orig/$safename.tmp
+				mv orig/$safename.tmp orig/$safename
+			else
+				mv orig/$safename.tmp orig/"$safename from $short"
+			end
+		else 
+			mv orig/$safename.tmp orig/$safename
+		end
+	end
+end
